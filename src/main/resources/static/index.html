@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test Carte</title>
+
+    <!-- 1. Le CSS de Leaflet (Indispensable pour assembler les morceaux de carte) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        /* On force la carte à occuper une zone bien visible */
+        #map {
+            width: 100%;
+            height: 600px;
+            background-color: #eee;
+            /* Fond gris en attendant les images */
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Ma première carte Leaflet</h2>
+
+    <!-- Le conteneur HTML de la carte -->
+    <div id="map"></div>
+
+    <!-- 2. Le script JS de Leaflet (Avec le bon attribut 'src') -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 1. Initialiser la carte et la centrer sur Madagascar (Latitude, Longitude, Niveau de zoom)
+        const map = L.map('map').setView([-18.7669, 46.8691], 6);
+
+        // 2. Charger et afficher les tuiles de la carte depuis OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // 3. Récupérer les données de l'API et poser les marqueurs
+        fetch('http://localhost:8080/api/parcs')
+            .then(response => response.json())
+            .then(parcs => {
+                // On parcourt la liste des parcs renvoyée par Spring Boot
+                parcs.forEach(parc => {
+                    // On vérifie que le parc possède bien des coordonnées valides
+                    if (parc.lat && parc.lng) {
+                        // Leaflet place le marqueur avec [Latitude, Longitude]
+                        L.marker([parc.lat, parc.lng])
+                            .addTo(map)
+                            .bindPopup(`<b>${parc.nom}</b><br>ID: ${parc.id}`);
+                    }
+                });
+            })
+            .catch(error => console.error("Erreur d'API :", error));
+    </script>
+</body>
+
+</html>
