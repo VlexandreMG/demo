@@ -54,6 +54,17 @@
                 });
             })
             .catch(error => console.error("Erreur d'API :", error));
+
+        // 4. Écouter le clic sur la carte
+        map.on('click', function (e) {
+            // e.latlng contient la latitude et la longitude du point cliqué
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+
+            console.log("Clic détecté aux coordonnées :", lat, lng);
+
+            // Le code pour appeler l'API ira ici à l'étape suivante !
+        });
     </script>
 </body>
 
