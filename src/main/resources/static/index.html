@@ -30,41 +30,49 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // 1. Initialiser la carte et la centrer sur Madagascar (Latitude, Longitude, Niveau de zoom)
-        const map = L.map('map').setView([-18.7669, 46.8691], 6);
+        // 1. Initialiser la carte centrée sur Madagascar
+const map = L.map('map').setView([-18.7669, 46.8691], 6);
 
-        // 2. Charger et afficher les tuiles de la carte depuis OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+// 2. Ajouter le fond de carte OpenStreetMap
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
 
-        // 3. Récupérer les données de l'API et poser les marqueurs
-        fetch('http://localhost:8080/api/parcs')
-            .then(response => response.json())
-            .then(parcs => {
-                // On parcourt la liste des parcs renvoyée par Spring Boot
-                parcs.forEach(parc => {
-                    // On vérifie que le parc possède bien des coordonnées valides
-                    if (parc.lat && parc.lng) {
-                        // Leaflet place le marqueur avec [Latitude, Longitude]
-                        L.marker([parc.lat, parc.lng])
-                            .addTo(map)
-                            .bindPopup(`<b>${parc.nom}</b><br>ID: ${parc.id}`);
-                    }
-                });
-            })
-            .catch(error => console.error("Erreur d'API :", error));
-
-        // 4. Écouter le clic sur la carte
-        map.on('click', function (e) {
-            // e.latlng contient la latitude et la longitude du point cliqué
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
-
-            console.log("Clic détecté aux coordonnées :", lat, lng);
-
-            // Le code pour appeler l'API ira ici à l'étape suivante !
+// 3. AFFICHAGE DES MARQUEURS AU DÉMARRAGE
+fetch('http://localhost:8080/api/parcs')
+    .then(response => response.json())
+    .then(parcs => {
+        parcs.forEach(parc => {
+            if (parc.lat && parc.lng) {
+                L.marker([parc.lat, parc.lng])
+                    .addTo(map)
+                    .bindPopup(`<b>${parc.nom}</b><br>ID: ${parc.id}`);
+            }
         });
+    })
+    .catch(error => console.error("Erreur d'API :", error));
+
+// 4. LOGIQUE DE CLIC ET DE PROXIMITÉ (Bien séparée à l'extérieur !)
+map.on('click', function(e) {
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+    const rayonKm = 200; // Tu peux repasser à 200km pour tester la précision
+    
+    fetch(`http://localhost:8080/api/parcs/proximite?lng=${lng}&lat=${lat}&rayonKm=${rayonKm}`)
+        .then(response => response.json())
+        .then(parcsProches => {
+            if (parcsProches.length > 0) {
+                const nomsParcs = parcsProches.map(p => p.nom).join(", ");
+                alert(`🌲 Parc(s) national(aux) proche(s) (dans un rayon de ${rayonKm}km) :\n- ${nomsParcs}`);
+            } else {
+                alert(`❌ Aucun parc national à proximité immédiate (dans un rayon de ${rayonKm}km).`);
+            }
+        })
+        .catch(error => {
+            console.error("Erreur lors de la recherche de proximité :", error);
+            alert("Impossible de contacter le serveur pour la recherche de proximité.");
+        });
+});
     </script>
 </body>
 
