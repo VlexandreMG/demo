@@ -31,49 +31,62 @@
 
     <script>
         // 1. Initialiser la carte centrée sur Madagascar
-const map = L.map('map').setView([-18.7669, 46.8691], 6);
+        const map = L.map('map').setView([-18.7669, 46.8691], 6);
 
-// 2. Ajouter le fond de carte OpenStreetMap
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-}).addTo(map);
+        // 2. Ajouter le fond de carte OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-// 3. AFFICHAGE DES MARQUEURS AU DÉMARRAGE
-fetch('http://localhost:8080/api/parcs')
-    .then(response => response.json())
-    .then(parcs => {
-        parcs.forEach(parc => {
-            if (parc.lat && parc.lng) {
-                L.marker([parc.lat, parc.lng])
-                    .addTo(map)
-                    .bindPopup(`<b>${parc.nom}</b><br>ID: ${parc.id}`);
-            }
+        // 3. AFFICHAGE DES MARQUEURS AU DÉMARRAGE
+        fetch('http://localhost:8080/api/parcs')
+                //Avadika tableau d'objet json le text brut 
+            .then(response => response.json())
+                //Boucleny le parc 
+            .then(parcs => {
+                parcs.forEach(parc => {
+                        // Manana longitude sy lattitude
+                    if (parc.lat && parc.lng) {
+                            // Créé un marqueur
+                        L.marker([parc.lat, parc.lng])
+                            .addTo(map)
+                                // Le popup rehefa cliquena 
+                            .bindPopup(`<b>${parc.nom}</b><br>ID: ${parc.id}`);
+                    }
+                });
+            })
+            .catch(error => console.error("Erreur d'API :", error));
+
+        // 4. LOGIQUE DE CLIC ET DE PROXIMITÉ (Bien séparée à l'extérieur !)
+            // Interagis au clique 
+        map.on('click', function (e) {
+            // Position précise le partie cliquen'le olona (long,lat)
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            // Rayon de verification 
+            const rayonKm = 200; // Tu peux repasser à 200km pour tester la précision
+
+            fetch(`http://localhost:8080/api/parcs/proximite?lng=${lng}&lat=${lat}&rayonKm=${rayonKm}`)
+                .then(response => response.json())
+                .then(parcsProches => {
+                        // Vérification hoe misy sa tsisy 
+                    if (parcsProches.length > 0) {
+                            // .map(p => p.nom) : Extractena le anarana 
+                            // .join(", ") : Atambatra PostGis ao anaty phrase ray le le parcs proches 
+                        const nomsParcs = parcsProches.map(p => p.nom).join(", ");
+                        alert(` Parc(s) national(aux) proche(s) (dans un rayon de ${rayonKm}km) :\n- ${nomsParcs}`);
+                    } else {
+                        alert(` Aucun parc national à proximité immédiate (dans un rayon de ${rayonKm}km).`);
+                    }
+                })
+                .catch(error => {
+                    console.error("Erreur lors de la recherche de proximité :", error);
+                    alert("Impossible de contacter le serveur pour la recherche de proximité.");
+                });
         });
-    })
-    .catch(error => console.error("Erreur d'API :", error));
-
-// 4. LOGIQUE DE CLIC ET DE PROXIMITÉ (Bien séparée à l'extérieur !)
-map.on('click', function(e) {
-    const lat = e.latlng.lat;
-    const lng = e.latlng.lng;
-    const rayonKm = 200; // Tu peux repasser à 200km pour tester la précision
-    
-    fetch(`http://localhost:8080/api/parcs/proximite?lng=${lng}&lat=${lat}&rayonKm=${rayonKm}`)
-        .then(response => response.json())
-        .then(parcsProches => {
-            if (parcsProches.length > 0) {
-                const nomsParcs = parcsProches.map(p => p.nom).join(", ");
-                alert(`🌲 Parc(s) national(aux) proche(s) (dans un rayon de ${rayonKm}km) :\n- ${nomsParcs}`);
-            } else {
-                alert(`❌ Aucun parc national à proximité immédiate (dans un rayon de ${rayonKm}km).`);
-            }
-        })
-        .catch(error => {
-            console.error("Erreur lors de la recherche de proximité :", error);
-            alert("Impossible de contacter le serveur pour la recherche de proximité.");
-        });
-});
     </script>
 </body>
 
 </html>
+
+<!-- Pourquoi le JSON  -->
